@@ -1,0 +1,3 @@
+#!/bin/sh
+
+go build -o bin/go4tv cmd/go4tv/main.go

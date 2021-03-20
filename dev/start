@@ -1,0 +1,8 @@
+#!/bin/sh
+cd "$(dirname "$0")"
+
+docker run --rm -it \
+    --name "go4tv" \
+    -p "8080:8080" \
+    -v "${PWD}/../:/app" \
+    go4tv_img serve --bind :8080;
