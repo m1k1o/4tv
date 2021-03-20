@@ -5,7 +5,7 @@ set -e
 
 docker run --rm -it \
     -v "${PWD}/../:/app" \
-    --entrypoint="/app/build" \
-    go4tv_img;
+    --entrypoint="go" \
+    go4tv_img build -o bin/go4tv cmd/go4tv/main.go
 
 ./start

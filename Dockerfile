@@ -1,21 +1,40 @@
-FROM golang:1.16-buster as server
-WORKDIR /app
+#
+# STAGE 1: build static web files
+#
+FROM node:14 as frontend
+WORKDIR /src
 
 #
 # install dependencies
-#RUN set -eux; apt-get update; \
-#    apt-get install -y --no-install-recommends;
-#    #
-#    # clean up
-#    apt-get clean -y; \
-#    rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+COPY client/package*.json ./
+RUN npm install
 
 #
-# build server
+# build client
+COPY client/ .
+RUN npm run build
+
+#
+# STAGE 2: build executable binary
+#
+FROM golang:1.16-buster as builder
+WORKDIR /app
+
 COPY . .
-
 RUN go get -v -t -d .; \
-    ./build
+    go build -o bin/go4tv cmd/go4tv/main.go
 
-ENTRYPOINT [ "bin/go4tv" ]
+#
+# STAGE 3: build a small image
+#
+#FROM scratch
+#COPY --from=builder /app/bin/go4tv /app/bin/go4tv
+COPY --from=frontend /src/dist/ /var/www
+
+ENV GO4TV_BIND=:8080
+ENV GO4TV_STATIC=/var/www
+
+EXPOSE 8080
+
+ENTRYPOINT [ "/app/bin/go4tv" ]
 CMD [ "serve" ]
