@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 
@@ -90,9 +92,45 @@ var epgCmd = &cobra.Command{
 	},
 }
 
+var logosCmd = &cobra.Command{
+	Use:   "logos",
+	Short: "Add logos.",
+	Run: func(cmd *cobra.Command, args []string) {
+		config, err := internal.LoadConfig(configFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		data, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		logos := map[string]string{}
+		if err := json.Unmarshal(data, &logos); err != nil {
+			log.Fatal(err)
+		}
+
+		for i, channel := range config.Channels {
+			for _, epg := range channel.Epg {
+				if logo, ok := logos[epg.ID]; ok {
+					channel.Logo = logo
+					break
+				}
+			}
+			config.Channels[i] = channel
+		}
+
+		if err := internal.SaveConfig(configFile, config); err != nil {
+			log.Fatal(err)
+		}
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(playlistCmd)
 	rootCmd.AddCommand(epgCmd)
+	rootCmd.AddCommand(logosCmd)
 
 	for _, cmd := range rootCmd.Commands() {
 		cmd.Flags().StringVarP(&configFile, "config", "c", "./config.yaml", "Path to config file.")

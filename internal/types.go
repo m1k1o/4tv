@@ -2,8 +2,8 @@ package internal
 
 type Config struct {
 	Epg      []EpgSource `yaml:"epg"`
-	Channels []Channel   `yaml:"channels"`
 	Buckets  []Bucket    `yaml:"buckets"`
+	Channels []Channel   `yaml:"channels"`
 }
 
 type EpgSource struct {
