@@ -33,7 +33,12 @@ func UnmarshalXmlTv(s []byte) (x xmltv, err error) {
 }
 
 func MarshalXmlTv(x xmltv) ([]byte, error) {
-	return xml.MarshalIndent(x, "", "  ")
+	data, err := xml.MarshalIndent(x, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" + string(data)), nil
 }
 
 func FilterXmlTvByChannels(input xmltv, channels []string) (output xmltv, err error) {
