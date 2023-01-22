@@ -43,7 +43,7 @@ func ChannelsToM3U8(xmlTvUrl string, channel []Channel) string {
 		}
 		stream := channel.Streams[0] // we expect only one stream per channel
 
-		buffer.WriteString(fmt.Sprintf("#EXTINF:-1 tvg-id=\"%d\"", i))
+		buffer.WriteString(fmt.Sprintf("#EXTINF:-1 tvg-chno=\"%d\"", i))
 
 		if channel.Logo != "" {
 			buffer.WriteString(fmt.Sprintf(" tvg-logo=\"%s\"", channel.Logo))

@@ -19,6 +19,8 @@ channels:
   epg:
   - provider: test-provider
     id: 1
+    labels:
+    - sk
 
 buckets:
 - name: bucket
@@ -27,10 +29,10 @@ buckets:
   - enigma2
   # select channels by labels
   channels:
-  - Jednotka HD
+  -  News
   # select streams by labels
   streams:
   - h264
   # select epg by labels
   epg:
-  - test-provider
+  - sk

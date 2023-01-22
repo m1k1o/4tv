@@ -126,7 +126,7 @@ func GetChannelsByBucket(channels []Channel, bucket Bucket) []Channel {
 			}
 
 			// if no epgs match, use empty epg
-			if match != nil {
+			if match == nil {
 				channel.Epg = []ChannelEpg{}
 			} else {
 				// only use the matching epg
