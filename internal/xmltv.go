@@ -3,6 +3,7 @@ package internal
 import (
 	"encoding/xml"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -14,21 +15,15 @@ type xmltv struct {
 }
 
 type xmlchannel struct {
-	Id   string `xml:"id,attr"`
-	Name string `xml:"display-name"`
+	Id  string `xml:"id,attr"`
+	Raw string `xml:",innerxml"`
 }
 
 type xmlprogramme struct {
-	Start       string   `xml:"start,attr"`
-	Stop        string   `xml:"stop,attr"`
-	Channel     string   `xml:"channel,attr"`
-	Title       string   `xml:"title"`
-	SubTitle    string   `xml:"sub-title"`
-	Description string   `xml:"desc"`
-	Credits     string   `xml:"credits"`
-	Date        string   `xml:"date"`
-	Categories  []string `xml:"category"`
-	Rating      string   `xml:"rating>value"`
+	Start   string `xml:"start,attr"`
+	Stop    string `xml:"stop,attr"`
+	Channel string `xml:"channel,attr"`
+	Raw     string `xml:",innerxml"`
 }
 
 func UnmarshalXmlTv(s []byte) (x xmltv, err error) {
@@ -80,46 +75,69 @@ func JoinXmlTvs(inputs ...xmltv) (output xmltv, err error) {
 	return
 }
 
-func DownloadXmlTvByEpgSoruce(sources []EpgSource, dataPath string) error {
+func DownloadXmlTvByEpgSoruce(sources []EpgSource) (map[string][]*os.File, error) {
+	epgs := make(map[string][]*os.File)
 	for _, source := range sources {
-		// create file name
-		fileName := fmt.Sprintf("%s.xml", source.Provider)
+		file, err := os.CreateTemp("./tmp/", fmt.Sprintf("xmltv-%s-*.xml", source.Provider))
+		if err != nil {
+			return nil, err
+		}
 
-		// create file path
-		filePath := filepath.Join(dataPath, fileName)
+		log.Printf("Downloading %s from %s\n", filepath.Base(file.Name()), source.URL)
+
+		epgs[source.Provider] = append(epgs[source.Provider], file)
 
 		// download file
-		if err := downloadFile(filePath, source.URL); err != nil {
-			return err
+		if err := downloadFile(file, source.URL); err != nil {
+			for _, f := range epgs {
+				for _, ff := range f {
+					ff.Close()
+				}
+			}
+			return nil, err
 		}
 	}
 
-	return nil
+	return epgs, nil
 }
 
 func CreateXmlTvByBuckets(epg []EpgSource, buckets map[string][]Channel, outPath string) error {
-	tmpDir, err := os.MkdirTemp("./tmp/", "xmltv-")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer os.RemoveAll(tmpDir)
-
-	// download xmltv files
-	if err := DownloadXmlTvByEpgSoruce(epg, tmpDir); err != nil {
-		return err
-	}
-
 	// create epg buckets
 	epgBuckets := make(map[string]map[string][]string) // bucket -> provider -> channels
+	epgProvides := make(map[string]struct{})           // providers
 	for bucket, channels := range buckets {
 		epgBuckets[bucket] = make(map[string][]string)
 		for _, channel := range channels {
 			if len(channel.Epg) > 0 {
 				epg := channel.Epg[0] // we expect only one epg source per channel
 				epgBuckets[bucket][epg.Provider] = append(epgBuckets[bucket][epg.Provider], epg.ID)
+				epgProvides[epg.Provider] = struct{}{}
 			}
 		}
 	}
+
+	// get only used providers
+	var epgSources []EpgSource
+	for _, source := range epg {
+		if _, ok := epgProvides[source.Provider]; ok {
+			epgSources = append(epgSources, source)
+		}
+	}
+
+	// download xmltv files
+	files, err := DownloadXmlTvByEpgSoruce(epgSources)
+	if err != nil {
+		return err
+	}
+
+	// close all files
+	defer func() {
+		for _, f := range files {
+			for _, ff := range f {
+				ff.Close()
+			}
+		}
+	}()
 
 	// create xmltv files
 	for bucket, providers := range epgBuckets {
@@ -134,34 +152,37 @@ func CreateXmlTvByBuckets(epg []EpgSource, buckets map[string][]Channel, outPath
 
 		// join xmltv files
 		for provider, channels := range providers {
-			// create file name
-			fileName := fmt.Sprintf("%s.xml", provider)
+			// get file
+			epgFiles := files[provider]
 
-			// create file path
-			filePath := filepath.Join(tmpDir, fileName)
+			for _, file := range epgFiles {
+				_, err = file.Seek(0, io.SeekStart)
+				if err != nil {
+					return err
+				}
 
-			// read file
-			file, err := os.ReadFile(filePath)
-			if err != nil {
-				return err
-			}
+				data, err := io.ReadAll(file)
+				if err != nil {
+					return err
+				}
 
-			// unmarshal xmltv
-			xmltvFile, err := UnmarshalXmlTv(file)
-			if err != nil {
-				return err
-			}
+				// unmarshal xmltv
+				xmltvFile, err := UnmarshalXmlTv(data)
+				if err != nil {
+					return err
+				}
 
-			// filter xmltv
-			xmltvFile, err = FilterXmlTvByChannels(xmltvFile, channels)
-			if err != nil {
-				return err
-			}
+				// filter xmltv
+				xmltvFile, err = FilterXmlTvByChannels(xmltvFile, channels)
+				if err != nil {
+					return err
+				}
 
-			// join xmltv
-			xmltv, err = JoinXmlTvs(xmltv, xmltvFile)
-			if err != nil {
-				return err
+				// join xmltv
+				xmltv, err = JoinXmlTvs(xmltv, xmltvFile)
+				if err != nil {
+					return err
+				}
 			}
 		}
 

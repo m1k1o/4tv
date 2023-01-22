@@ -7,14 +7,7 @@ import (
 	"os"
 )
 
-func downloadFile(filepath, url string) error {
-	// Create the file
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
+func downloadFile(file *os.File, url string) error {
 	// Get the data
 	resp, err := http.Get(url)
 	if err != nil {
@@ -28,7 +21,7 @@ func downloadFile(filepath, url string) error {
 	}
 
 	// Writer the body to file
-	_, err = io.Copy(out, resp.Body)
+	_, err = io.Copy(file, resp.Body)
 	return err
 }
 

@@ -79,9 +79,7 @@ var epgCmd = &cobra.Command{
 			log.Printf("bucket: %s", bucket.Name)
 
 			channels := internal.GetChannelsByBucket(config.Channels, bucket)
-			if len(bucket.Epg) > 0 {
-				xmltv[bucket.Name] = channels
-			}
+			xmltv[bucket.Name] = channels
 
 			log.Printf("channels: %d", len(channels))
 		}
