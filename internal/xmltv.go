@@ -89,7 +89,7 @@ func JoinXmlTvs(inputs ...xmltv) (output xmltv, err error) {
 func DownloadXmlTvByEpgSoruce(sources []EpgSource) (map[string][]*os.File, error) {
 	epgs := make(map[string][]*os.File)
 	for _, source := range sources {
-		file, err := os.CreateTemp("./tmp/", fmt.Sprintf("xmltv-%s-*.xml", source.Provider))
+		file, err := os.CreateTemp("", fmt.Sprintf("xmltv-%s-*.xml", source.Provider))
 		if err != nil {
 			return nil, err
 		}
