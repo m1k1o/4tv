@@ -8,7 +8,10 @@ import (
 	"strings"
 )
 
-func CreateM3U8ByBuckets(buckets map[string][]Channel, outPath string) error {
+func CreateM3U8ByBuckets(url string, buckets map[string][]Channel, outPath string) error {
+	// remove last slash
+	url = strings.TrimSuffix(url, "/")
+
 	// create m3u8 files
 	for bucket, channles := range buckets {
 		// create file name
@@ -18,7 +21,7 @@ func CreateM3U8ByBuckets(buckets map[string][]Channel, outPath string) error {
 		filePath := filepath.Join(outPath, fileName)
 
 		// create m3u8 struct
-		m3u8 := ChannelsToM3U8(fmt.Sprintf("%s.xml", bucket), channles)
+		m3u8 := ChannelsToM3U8(fmt.Sprintf("%s/%s.xml", url, bucket), channles)
 
 		// write m3u8 file
 		if err := os.WriteFile(filePath, []byte(m3u8), 0644); err != nil {

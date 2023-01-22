@@ -57,7 +57,7 @@ var playlistCmd = &cobra.Command{
 			log.Printf("channels: %d", len(channels))
 		}
 
-		if err := internal.CreateM3U8ByBuckets(m3u8, dataFolder); err != nil {
+		if err := internal.CreateM3U8ByBuckets(config.Url, m3u8, dataFolder); err != nil {
 			log.Fatal(err)
 		}
 

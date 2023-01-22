@@ -1,6 +1,7 @@
 package internal
 
 type Config struct {
+	Url      string      `yaml:"url"`
 	Epg      []EpgSource `yaml:"epg"`
 	Buckets  []Bucket    `yaml:"buckets"`
 	Channels []Channel   `yaml:"channels"`
