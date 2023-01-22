@@ -103,6 +103,7 @@ func DownloadXmlTvByEpgSoruce(sources []EpgSource) (map[string][]*os.File, error
 			for _, f := range epgs {
 				for _, ff := range f {
 					ff.Close()
+					os.Remove(ff.Name())
 				}
 			}
 			return nil, err
@@ -141,11 +142,12 @@ func CreateXmlTvByBuckets(epg []EpgSource, buckets map[string][]Channel, outPath
 		return err
 	}
 
-	// close all files
+	// close and remove all files
 	defer func() {
 		for _, f := range files {
 			for _, ff := range f {
 				ff.Close()
+				os.Remove(ff.Name())
 			}
 		}
 	}()
