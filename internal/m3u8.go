@@ -50,7 +50,7 @@ func ChannelsToM3U8(xmlTvUrl string, channel []Channel) string {
 		}
 
 		if len(channel.Labels) > 0 {
-			buffer.WriteString(fmt.Sprintf(" group-title==\"%s\"", strings.Join(channel.Labels, ";")))
+			buffer.WriteString(fmt.Sprintf(" group-title=\"%s\"", strings.Join(channel.Labels, ";")))
 		}
 
 		if len(channel.Epg) > 0 {
