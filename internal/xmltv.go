@@ -61,15 +61,26 @@ func FilterXmlTvByChannels(input xmltv, channels []string) (output xmltv, err er
 	return
 }
 
+// join xmltv files without duplicates
 func JoinXmlTvs(inputs ...xmltv) (output xmltv, err error) {
-	// join channels
-	for _, input := range inputs {
-		output.ChannelList = append(output.ChannelList, input.ChannelList...)
+	// check if already exists in output
+	inputsMap := make(map[string]int)
+	for i, input := range inputs {
+		for _, channel := range input.ChannelList {
+			if _, ok := inputsMap[channel.Id]; !ok {
+				inputsMap[channel.Id] = i
+				output.ChannelList = append(output.ChannelList, channel)
+			}
+		}
 	}
 
-	// join programmes
-	for _, input := range inputs {
-		output.ProgrammeList = append(output.ProgrammeList, input.ProgrammeList...)
+	// join programmes based on inputsMap id
+	for i, input := range inputs {
+		for _, programme := range input.ProgrammeList {
+			if j, ok := inputsMap[programme.Channel]; ok && j == i {
+				output.ProgrammeList = append(output.ProgrammeList, programme)
+			}
+		}
 	}
 
 	return
