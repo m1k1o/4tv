@@ -10,6 +10,7 @@ import (
 )
 
 type xmltv struct {
+	XMLName       xml.Name       `xml:"tv"`
 	ChannelList   []xmlchannel   `xml:"channel"`
 	ProgrammeList []xmlprogramme `xml:"programme"`
 }
