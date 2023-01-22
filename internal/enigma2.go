@@ -10,7 +10,7 @@ import (
 
 func CreateEnigma2ByBuckets(buckets map[string][]Channel, outPath string) error {
 	// if having multiple buckets, we need to use different namespace
-	const namespace = 1000
+	var namespace = 1000
 
 	// create enigma2 files
 	for bucket, channles := range buckets {
@@ -33,6 +33,8 @@ func CreateEnigma2ByBuckets(buckets map[string][]Channel, outPath string) error 
 		if err := os.WriteFile(channelsFilePath, []byte(channels), 0644); err != nil {
 			return err
 		}
+
+		namespace++
 	}
 
 	return nil
