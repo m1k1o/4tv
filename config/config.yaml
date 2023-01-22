@@ -1,0 +1,36 @@
+epg:
+  - provider: test-provider
+    url: http://stream1.example.com/epg.xml
+
+channels:
+- name: Jednotka HD
+  logo: https://i.imgur.com/aqVki9i.png
+  labels:
+  - News
+  streams:
+  - url: http://stream1.example.com/1.m3u8
+    labels: 
+    - h264
+    catchup:
+      enabled: true
+      mode: default
+      source: http://stream1.example.com/1.m3u8?duration={duration}&start={utc}
+      days: 7
+  epg:
+  - provider: test-provider
+    id: 1
+
+buckets:
+- name: bucket
+  formats:
+  - m3u8
+  - enigma2
+  # select channels by labels
+  channels:
+  - Jednotka HD
+  # select streams by labels
+  streams:
+  - h264
+  # select epg by labels
+  epg:
+  - test-provider

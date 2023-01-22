@@ -1,6 +1,0 @@
-#!/bin/sh
-cd "$(dirname "$0")"
-
-docker build -t go4tv_img ..
-
-./rebuild
