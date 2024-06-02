@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"go4tv/internal"
 
@@ -21,6 +22,78 @@ var rootCmd = &cobra.Command{
 	Use:   "4tv",
 	Short: "4tv - everything fo(u)r tv",
 	Run:   func(cmd *cobra.Command, args []string) {},
+}
+
+var checkCmd = &cobra.Command{
+	Use:   "check",
+	Short: "Check config.",
+	Run: func(cmd *cobra.Command, args []string) {
+		config := internal.Config{}
+		err := config.Load(configFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println("---")
+
+		fmt.Printf("Found %d channels\n", len(config.Channels))
+		var channels = map[string]bool{}
+		for _, channel := range config.Channels {
+			if _, ok := channels[channel.Id]; ok {
+				log.Fatalf("Channel with id %q already exists", channel.Id)
+			}
+			channels[channel.Id] = true
+		}
+
+		fmt.Println("---")
+
+		fmt.Printf("Found %d epg sources:\n", len(config.Epg))
+		var channelsWithEpg = map[string]bool{}
+		for _, epg := range config.Epg {
+			fmt.Printf(" |- %q with %d channels\n", epg.Id, len(epg.ChannelsMap))
+			for epgId, chId := range epg.ChannelsMap {
+				if _, ok := channels[chId]; !ok {
+					fmt.Printf(" | |- epg %q mapped to a non-existent channel id %q\n", epgId, chId)
+				}
+				channelsWithEpg[chId] = true
+			}
+		}
+		noEpgChannels := []string{}
+		for chId := range channels {
+			if _, ok := channelsWithEpg[chId]; !ok {
+				noEpgChannels = append(noEpgChannels, chId)
+			}
+		}
+		if len(noEpgChannels) > 0 {
+			fmt.Printf("There are %d channels without epg: \n |- %s\n", len(noEpgChannels), strings.Join(noEpgChannels, ", "))
+		}
+
+		fmt.Println("---")
+
+		fmt.Printf("Found %d streams\n", len(config.Streams))
+		var channelsWithSources = map[string]bool{}
+		for _, stream := range config.Streams {
+			if _, ok := channels[stream.Channel]; !ok {
+				fmt.Printf(" |- stream %q mapped to a non-existent channel id %q\n", stream.URL, stream.Channel)
+			}
+			channelsWithSources[stream.Channel] = true
+		}
+		noStreamChannels := []string{}
+		for chId := range channels {
+			if _, ok := channelsWithSources[chId]; !ok {
+				noStreamChannels = append(noStreamChannels, chId)
+			}
+		}
+		if len(noStreamChannels) > 0 {
+			fmt.Printf("There are %d channels without stream: \n |- %s\n", len(noStreamChannels), strings.Join(noStreamChannels, ", "))
+		}
+
+		fmt.Println("---")
+
+		fmt.Printf("Found %d packages\n", len(config.Packages))
+
+		fmt.Println("---")
+	},
 }
 
 var playlistCmd = &cobra.Command{
@@ -150,6 +223,7 @@ var logosCmd = &cobra.Command{
 }
 
 func init() {
+	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(playlistCmd)
 	rootCmd.AddCommand(epgCmd)
 	rootCmd.AddCommand(logosCmd)

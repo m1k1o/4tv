@@ -4,7 +4,7 @@ epg:
   labels:
   - sk
   channels_map:
-    <channel_id>: <epg_channel_id>
+    <epg_channel_id>: <channel_id>
 
 channels:
 - id: jednotka

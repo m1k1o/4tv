@@ -39,15 +39,16 @@ func ConvertToBuckets(config Config) (buckets []Bucket) {
 					continue
 				}
 
-				chId, ok := epg.ChannelsMap[channel.Id]
-				if !ok {
-					continue
-				}
+				for epgChId, channelId := range epg.ChannelsMap {
+					if channelId != channel.Id {
+						continue
+					}
 
-				epgs = append(epgs, BucketEpg{
-					SourceId:  epg.Id,
-					ChannelId: chId,
-				})
+					epgs = append(epgs, BucketEpg{
+						SourceId:  epg.Id,
+						ChannelId: epgChId,
+					})
+				}
 			}
 
 			channels = append(channels, BucketChannel{
