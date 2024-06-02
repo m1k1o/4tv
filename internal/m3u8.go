@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func CreateM3U8ByBuckets(url string, buckets map[string][]Channel, outPath string) error {
+func CreateM3U8ByBuckets(url string, buckets map[string][]BucketChannel, outPath string) error {
 	// remove last slash
 	url = strings.TrimSuffix(url, "/")
 
@@ -32,7 +32,7 @@ func CreateM3U8ByBuckets(url string, buckets map[string][]Channel, outPath strin
 	return nil
 }
 
-func ChannelsToM3U8(xmlTvUrl string, channel []Channel) string {
+func ChannelsToM3U8(xmlTvUrl string, channel []BucketChannel) string {
 	var buffer bytes.Buffer
 	if xmlTvUrl != "" {
 		buffer.WriteString(fmt.Sprintf("#EXTM3U x-tvg-url=\"%s\"\n", xmlTvUrl))
@@ -56,9 +56,8 @@ func ChannelsToM3U8(xmlTvUrl string, channel []Channel) string {
 			buffer.WriteString(fmt.Sprintf(" group-title=\"%s\"", strings.Join(channel.Labels, ";")))
 		}
 
-		if len(channel.Epg) > 0 {
-			epg := channel.Epg[0] // we expect only one epg source per channel
-			buffer.WriteString(fmt.Sprintf(" tvg-id=\"%s\"", epg.ID))
+		if len(channel.Epgs) > 0 {
+			buffer.WriteString(fmt.Sprintf(" tvg-id=\"%s\"", channel.Id))
 		}
 
 		if stream.Catchup.Mode != "" {

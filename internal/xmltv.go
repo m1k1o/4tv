@@ -41,13 +41,16 @@ func MarshalXmlTv(x xmltv) ([]byte, error) {
 	return []byte("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" + string(data)), nil
 }
 
-func FilterXmlTvByChannels(input xmltv, channels []string) (output xmltv, err error) {
+func FilterXmlTvByChannels(input xmltv, channels map[string]string /* channel_id -> epg_channel_id */) (output xmltv, err error) {
 	// filter channels list
 	for _, v := range input.ChannelList {
-		for _, c := range channels {
-			if v.Id == c {
+		for chid, epg_chid := range channels {
+			if v.Id == epg_chid {
 				// add channel to output list if it is in the channels list
-				output.ChannelList = append(output.ChannelList, v)
+				output.ChannelList = append(output.ChannelList, xmlchannel{
+					Id:  chid, // use channel id instead of epg channel id
+					Raw: v.Raw,
+				})
 				break
 			}
 		}
@@ -55,10 +58,15 @@ func FilterXmlTvByChannels(input xmltv, channels []string) (output xmltv, err er
 
 	// filter programme list
 	for _, v := range input.ProgrammeList {
-		for _, c := range channels {
-			if v.Channel == c {
+		for chid, epg_chid := range channels {
+			if v.Channel == epg_chid {
 				// add channel to output list if it is in the channels list
-				output.ProgrammeList = append(output.ProgrammeList, v)
+				output.ProgrammeList = append(output.ProgrammeList, xmlprogramme{
+					Start:   v.Start,
+					Stop:    v.Stop,
+					Channel: chid, // use channel id instead of epg channel id
+					Raw:     v.Raw,
+				})
 				break
 			}
 		}
@@ -95,14 +103,14 @@ func JoinXmlTvs(inputs ...xmltv) (output xmltv, err error) {
 func DownloadXmlTvByEpgSoruce(sources []EpgSource) (map[string][]*os.File, error) {
 	epgs := make(map[string][]*os.File)
 	for _, source := range sources {
-		file, err := os.CreateTemp("", fmt.Sprintf("xmltv-%s-*.xml", source.Provider))
+		file, err := os.CreateTemp("", fmt.Sprintf("xmltv-%s-*.xml", source.Id))
 		if err != nil {
 			return nil, err
 		}
 
 		log.Printf("Downloading %s from %s\n", filepath.Base(file.Name()), source.URL)
 
-		epgs[source.Provider] = append(epgs[source.Provider], file)
+		epgs[source.Id] = append(epgs[source.Id], file)
 
 		// download file
 		if err := downloadFile(file, source.URL); err != nil {
@@ -119,17 +127,19 @@ func DownloadXmlTvByEpgSoruce(sources []EpgSource) (map[string][]*os.File, error
 	return epgs, nil
 }
 
-func CreateXmlTvByBuckets(epg []EpgSource, buckets map[string][]Channel, outPath string) error {
+func CreateXmlTvByBuckets(epg []EpgSource, buckets []Bucket, outPath string) error {
 	// create epg buckets
-	epgBuckets := make(map[string]map[string][]string) // bucket -> provider -> channels
-	epgProvides := make(map[string]struct{})           // providers
-	for bucket, channels := range buckets {
-		epgBuckets[bucket] = make(map[string][]string)
-		for _, channel := range channels {
-			if len(channel.Epg) > 0 {
-				epg := channel.Epg[0] // we expect only one epg source per channel
-				epgBuckets[bucket][epg.Provider] = append(epgBuckets[bucket][epg.Provider], epg.ID)
-				epgProvides[epg.Provider] = struct{}{}
+	epgBuckets := make(map[string]map[string]map[string]string) // bucket_ID -> epg_source_ID -> channel_ID -> epg_channel_ID}
+	epgProvides := make(map[string]struct{})                    // epg_source_ID
+	for _, b := range buckets {
+		epgBuckets[b.Id] = make(map[string]map[string]string)
+		for _, channel := range b.Channels {
+			for _, epg := range channel.Epgs {
+				if _, ok := epgBuckets[b.Id][epg.SourceId]; !ok {
+					epgBuckets[b.Id][epg.SourceId] = make(map[string]string)
+				}
+				epgBuckets[b.Id][epg.SourceId][channel.Channel.Id] = epg.ChannelId
+				epgProvides[epg.SourceId] = struct{}{}
 			}
 		}
 	}
@@ -137,7 +147,7 @@ func CreateXmlTvByBuckets(epg []EpgSource, buckets map[string][]Channel, outPath
 	// get only used providers
 	var epgSources []EpgSource
 	for _, source := range epg {
-		if _, ok := epgProvides[source.Provider]; ok {
+		if _, ok := epgProvides[source.Id]; ok {
 			epgSources = append(epgSources, source)
 		}
 	}

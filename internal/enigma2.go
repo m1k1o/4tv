@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-func CreateEnigma2ByBuckets(buckets map[string][]Channel, outPath string) error {
+func CreateEnigma2ByBuckets(buckets map[string][]BucketChannel, outPath string) error {
 	// if having multiple buckets, we need to use different namespace
 	var namespace = 1000
 
@@ -40,7 +40,7 @@ func CreateEnigma2ByBuckets(buckets map[string][]Channel, outPath string) error 
 	return nil
 }
 
-func ChannelsToEnigma2(bucketName string, namespace int, channel []Channel) (tv, channels string) {
+func ChannelsToEnigma2(bucketName string, namespace int, channel []BucketChannel) (tv, channels string) {
 	var tvBuffer, channelsBuffer bytes.Buffer
 
 	tvBuffer.WriteString(fmt.Sprintf("#NAME %s\n", bucketName))
@@ -60,9 +60,8 @@ func ChannelsToEnigma2(bucketName string, namespace int, channel []Channel) (tv,
 		tvBuffer.WriteString(fmt.Sprintf("#SERVICE %s:%s:%s\n", servicePrefix, url.QueryEscape(stream.URL), channel.Name))
 		tvBuffer.WriteString(fmt.Sprintf("#DESCRIPTION %s\n", channel.Name))
 
-		if len(channel.Epg) > 0 {
-			epg := channel.Epg[0] // we expect only one epg source per channel
-			channelsBuffer.WriteString(fmt.Sprintf("<channel id=\"%s\">%s:http%%3A//example.com</channel> <!-- %s -->\n", epg.ID, servicePrefix, channel.Name))
+		if len(channel.Epgs) > 0 {
+			channelsBuffer.WriteString(fmt.Sprintf("<channel id=\"%s\">%s:http%%3A//example.com</channel> <!-- %s -->\n", channel.Id, servicePrefix, channel.Name))
 		}
 	}
 

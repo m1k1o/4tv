@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"os"
 
@@ -27,17 +25,19 @@ var playlistCmd = &cobra.Command{
 	Use:   "playlist",
 	Short: "Generate playlists.",
 	Run: func(cmd *cobra.Command, args []string) {
-		config, err := internal.LoadConfig(configFile)
+		config := internal.Config{}
+		err := config.Load(configFile)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		m3u8 := map[string][]internal.Channel{}
-		enigma2 := map[string][]internal.Channel{}
-		for _, bucket := range config.Buckets {
-			log.Printf("bucket: %s", bucket.Name)
+		buckets := internal.ConvertToBuckets(config)
 
-			channels := internal.GetChannelsByBucket(config.Channels, bucket)
+		m3u8 := map[string][]internal.BucketChannel{}
+		enigma2 := map[string][]internal.BucketChannel{}
+		for _, bucket := range buckets {
+			log.Printf("bucket: %s", bucket.Id)
+
 			for _, format := range bucket.Formats {
 				log.Printf("format: %s", format)
 				switch format {
@@ -46,15 +46,15 @@ var playlistCmd = &cobra.Command{
 				case "m3u":
 					fallthrough
 				case "m3u8":
-					m3u8[bucket.Name] = channels
+					m3u8[bucket.Id] = bucket.Channels
 				case "enigma2":
-					enigma2[bucket.Name] = channels
+					enigma2[bucket.Id] = bucket.Channels
 				default:
 					log.Printf("format '%s' not supported", format)
 				}
 			}
 
-			log.Printf("channels: %d", len(channels))
+			log.Printf("channels: %d", len(bucket.Channels))
 		}
 
 		if err := internal.CreateM3U8ByBuckets(config.Url, m3u8, dataFolder); err != nil {
@@ -71,66 +71,60 @@ var epgCmd = &cobra.Command{
 	Use:   "epg",
 	Short: "Generate epgs.",
 	Run: func(cmd *cobra.Command, args []string) {
-		config, err := internal.LoadConfig(configFile)
+		config := internal.Config{}
+		err := config.Load(configFile)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		xmltv := map[string][]internal.Channel{}
-		for _, bucket := range config.Buckets {
-			log.Printf("bucket: %s", bucket.Name)
+		buckets := internal.ConvertToBuckets(config)
 
-			channels := internal.GetChannelsByBucket(config.Channels, bucket)
-			xmltv[bucket.Name] = channels
-
-			log.Printf("channels: %d", len(channels))
-		}
-
-		if err := internal.CreateXmlTvByBuckets(config.Epg, xmltv, dataFolder); err != nil {
+		if err := internal.CreateXmlTvByBuckets(config.Epg, buckets, dataFolder); err != nil {
 			log.Fatal(err)
 		}
 	},
 }
 
-var logosCmd = &cobra.Command{
-	Use:   "logos",
-	Short: "Add logos.",
-	Run: func(cmd *cobra.Command, args []string) {
-		config, err := internal.LoadConfig(configFile)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		data, err := io.ReadAll(os.Stdin)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		logos := map[string]string{}
-		if err := json.Unmarshal(data, &logos); err != nil {
-			log.Fatal(err)
-		}
-
-		for i, channel := range config.Channels {
-			for _, epg := range channel.Epg {
-				if logo, ok := logos[epg.ID]; ok {
-					channel.Logo = logo
-					break
-				}
-			}
-			config.Channels[i] = channel
-		}
-
-		if err := internal.SaveConfig(configFile, config); err != nil {
-			log.Fatal(err)
-		}
-	},
-}
+//	var logosCmd = &cobra.Command{
+//		Use:   "logos",
+//		Short: "Add logos.",
+//		Run: func(cmd *cobra.Command, args []string) {
+//			config := internal.Config{}
+//			err := config.Load(configFile)
+//			if err != nil {
+//				log.Fatal(err)
+//			}
+//
+//			data, err := io.ReadAll(os.Stdin)
+//			if err != nil {
+//				log.Fatal(err)
+//			}
+//
+//			logos := map[string]string{}
+//			if err := json.Unmarshal(data, &logos); err != nil {
+//				log.Fatal(err)
+//			}
+//
+//			for i, channel := range config.Channels {
+//				for _, epg := range channel.Epg {
+//					if logo, ok := logos[epg.ID]; ok {
+//						channel.Logo = logo
+//						break
+//					}
+//				}
+//				config.Channels[i] = channel
+//			}
+//
+//			if err := config.Save(configFile); err != nil {
+//				log.Fatal(err)
+//			}
+//		},Epg
+//	}
 
 func init() {
 	rootCmd.AddCommand(playlistCmd)
 	rootCmd.AddCommand(epgCmd)
-	rootCmd.AddCommand(logosCmd)
+	//rootCmd.AddCommand(logosCmd)
 
 	for _, cmd := range rootCmd.Commands() {
 		cmd.Flags().StringVarP(&configFile, "config", "c", "./config.yaml", "Path to config file.")

@@ -35,3 +35,12 @@ func ArrayIn[T comparable](val T, array []T) (exists bool, index int) {
 	}
 	return
 }
+
+func ArraysIntersect[T comparable](a, b []T) bool {
+	for _, val := range a {
+		if ok, _ := ArrayIn(val, b); ok {
+			return true
+		}
+	}
+	return false
+}
