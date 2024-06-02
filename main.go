@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"go4tv/internal"
 
@@ -11,8 +12,9 @@ import (
 )
 
 var (
-	configFile string
-	dataFolder string
+	configFile  string
+	dataFolder  string
+	logosFolder string
 )
 
 var rootCmd = &cobra.Command{
@@ -85,50 +87,77 @@ var epgCmd = &cobra.Command{
 	},
 }
 
-//	var logosCmd = &cobra.Command{
-//		Use:   "logos",
-//		Short: "Add logos.",
-//		Run: func(cmd *cobra.Command, args []string) {
-//			config := internal.Config{}
-//			err := config.Load(configFile)
-//			if err != nil {
-//				log.Fatal(err)
-//			}
-//
-//			data, err := io.ReadAll(os.Stdin)
-//			if err != nil {
-//				log.Fatal(err)
-//			}
-//
-//			logos := map[string]string{}
-//			if err := json.Unmarshal(data, &logos); err != nil {
-//				log.Fatal(err)
-//			}
-//
-//			for i, channel := range config.Channels {
-//				for _, epg := range channel.Epg {
-//					if logo, ok := logos[epg.ID]; ok {
-//						channel.Logo = logo
-//						break
-//					}
-//				}
-//				config.Channels[i] = channel
-//			}
-//
-//			if err := config.Save(configFile); err != nil {
-//				log.Fatal(err)
-//			}
-//		},Epg
-//	}
+var logosCmd = &cobra.Command{
+	Use:   "logos",
+	Short: "Download logos.",
+	Run: func(cmd *cobra.Command, args []string) {
+		config := internal.Config{}
+		err := config.Load(configFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// create a map of channels that are already in the config
+		channels := map[string]string{}
+		for _, channel := range config.Channels {
+			channels[channel.Id] = channel.Logo
+		}
+
+		// list all files in logos folder
+		files, err := os.ReadDir(logosFolder)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// create a map of logos that are already downloaded
+		channelsWithLogos := map[string]bool{}
+		for _, file := range files {
+			// remove file extension (everything after the last dot)
+			nameWithExtension := file.Name()
+			name := nameWithExtension[:len(nameWithExtension)-len(filepath.Ext(nameWithExtension))]
+			channelsWithLogos[name] = true
+		}
+
+		// download logos that are missing
+		for channel, logo := range channels {
+			if _, ok := channelsWithLogos[channel]; ok {
+				continue
+			}
+
+			// check if its png/jpg
+			ext := filepath.Ext(logo)
+			ext = fmt.Sprintf(".%s", ext)
+			if ext != ".png" && ext != ".jpg" && ext != ".jpeg" && ext != ".svg" {
+				ext = ".png" // default to png
+			}
+
+			log.Printf("downloading logo for channel: %s from: %s", channel, logo)
+
+			filePath := filepath.Join(logosFolder, fmt.Sprintf("%s.png", channel))
+			file, err := os.Create(filePath)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			if err := internal.DownloadFile(file, logo); err != nil {
+				file.Close()
+				log.Fatal(err)
+			}
+
+			file.Close()
+		}
+	},
+}
 
 func init() {
 	rootCmd.AddCommand(playlistCmd)
 	rootCmd.AddCommand(epgCmd)
-	//rootCmd.AddCommand(logosCmd)
+	rootCmd.AddCommand(logosCmd)
 
 	for _, cmd := range rootCmd.Commands() {
 		cmd.Flags().StringVarP(&configFile, "config", "c", "./config.yaml", "Path to config file.")
 		cmd.Flags().StringVarP(&dataFolder, "data", "d", "./data/", "Path to data folder.")
+		cmd.Flags().StringVarP(&logosFolder, "logos", "l", "./logos/", "Path to store logos.")
 	}
 }
 

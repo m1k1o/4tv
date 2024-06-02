@@ -113,7 +113,7 @@ func DownloadXmlTvByEpgSoruce(sources []EpgSource) (map[string][]*os.File, error
 		epgs[source.Id] = append(epgs[source.Id], file)
 
 		// download file
-		if err := downloadFile(file, source.URL); err != nil {
+		if err := DownloadFile(file, source.URL); err != nil {
 			for _, f := range epgs {
 				for _, ff := range f {
 					ff.Close()
