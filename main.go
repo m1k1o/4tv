@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
+	"sort"
 
 	"go4tv/internal"
 
@@ -65,7 +65,11 @@ var checkCmd = &cobra.Command{
 			}
 		}
 		if len(noEpgChannels) > 0 {
-			fmt.Printf("There are %d channels without epg: \n |- %s\n", len(noEpgChannels), strings.Join(noEpgChannels, ", "))
+			fmt.Printf("There are %d channels without epg: \n", len(noEpgChannels))
+			sort.Strings(noEpgChannels)
+			for _, chId := range noEpgChannels {
+				fmt.Printf(" |- %q\n", chId)
+			}
 		}
 
 		fmt.Println("---")
@@ -85,7 +89,11 @@ var checkCmd = &cobra.Command{
 			}
 		}
 		if len(noStreamChannels) > 0 {
-			fmt.Printf("There are %d channels without stream: \n |- %s\n", len(noStreamChannels), strings.Join(noStreamChannels, ", "))
+			fmt.Printf("There are %d channels without stream: \n", len(noStreamChannels))
+			sort.Strings(noStreamChannels)
+			for _, chId := range noStreamChannels {
+				fmt.Printf(" |- %q\n", chId)
+			}
 		}
 
 		fmt.Println("---")
