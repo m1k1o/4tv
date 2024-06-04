@@ -100,7 +100,7 @@ func (c *Config) load(file string) error {
 
 	var config Config
 	if err := yaml.Unmarshal(data, &config); err != nil {
-		return fmt.Errorf("failed to unmarshal data: %w", err)
+		return fmt.Errorf("failed to unmarshal %q: %w", file, err)
 	}
 
 	if config.Url != "" {
