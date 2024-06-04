@@ -39,19 +39,22 @@ type Catchup struct {
 }
 
 type Stream struct {
-	Channel string   `yaml:"channel"`
-	URL     string   `yaml:"url"`
-	Labels  []string `yaml:"labels,omitempty"`
-	Catchup *Catchup `yaml:"catchup,omitempty"`
+	Channel  string   `yaml:"channel"`
+	URL      string   `yaml:"url"`
+	Provider string   `yaml:"provider"`
+	Labels   []string `yaml:"labels,omitempty"`
+	Catchup  *Catchup `yaml:"catchup,omitempty"`
 }
 
 type Package struct {
 	Id      string   `yaml:"id"`
 	Formats []string `yaml:"formats"`
 	// labels
-	Channels []string `yaml:"channels,omitempty"`
-	Streams  []string `yaml:"streams,omitempty"`
-	Epg      []string `yaml:"epg,omitempty"`
+	Channels  []string          `yaml:"channels,omitempty"`
+	Streams   []string          `yaml:"streams,omitempty"`
+	Epg       []string          `yaml:"epg,omitempty"`
+	Logos     string            `yaml:"logos,omitempty"`
+	Providers map[string]string `yaml:"providers"` // ID -> URL
 }
 
 func (c *Config) Load(file string) error {

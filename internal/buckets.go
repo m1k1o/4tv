@@ -1,5 +1,7 @@
 package internal
 
+import "path"
+
 type Bucket struct {
 	Id       string
 	Formats  []string
@@ -30,6 +32,16 @@ func ConvertToBuckets(config Config) (buckets []Bucket) {
 				if len(pkg.Streams) > 0 && !ArraysIntersect(pkg.Streams, stream.Labels) {
 					continue
 				}
+				basePath, ok := pkg.Providers[stream.Provider]
+				if len(pkg.Providers) > 0 && ok {
+					stream.URL = basePath + stream.URL
+					if stream.Catchup != nil {
+						// deep copy to avoid modifying the original
+						catchup := *stream.Catchup
+						catchup.Source = basePath + catchup.Source
+						stream.Catchup = &catchup
+					}
+				}
 				streams = append(streams, stream)
 			}
 
@@ -51,6 +63,9 @@ func ConvertToBuckets(config Config) (buckets []Bucket) {
 				}
 			}
 
+			if pkg.Logos != "" {
+				channel.Logo = pkg.Logos + path.Base(channel.Logo)
+			}
 			channels = append(channels, BucketChannel{
 				Channel: channel,
 				Streams: streams,

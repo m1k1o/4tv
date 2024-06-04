@@ -18,6 +18,7 @@ streams:
   url: http://stream1.example.com/1.m3u8
   labels: 
   - h264
+  provider: <provider_id>
   catchup:
     mode: default
     source: http://stream1.example.com/1.m3u8?duration={duration}&start={utc}
@@ -37,3 +38,9 @@ packages:
   # select epg by labels
   epg:
   - sk
+  # if we host logos on our server, we can use this to prefix the logo url
+  # and path.Base(<logo url>) will be appended to it
+  logos: http://localhost/logos
+  # providers that will be used - if they have relative urls, they will be prefixed with the base url
+  providers:
+    <provider_id>: <url>
