@@ -116,8 +116,8 @@ var playlistCmd = &cobra.Command{
 
 		buckets := internal.ConvertToBuckets(config)
 
-		m3u8 := map[string][]internal.BucketChannel{}
-		enigma2 := map[string][]internal.BucketChannel{}
+		m3u8 := []internal.Bucket{}
+		enigma2 := []internal.Bucket{}
 		for _, bucket := range buckets {
 			log.Printf("bucket: %s", bucket.Id)
 
@@ -129,9 +129,9 @@ var playlistCmd = &cobra.Command{
 				case "m3u":
 					fallthrough
 				case "m3u8":
-					m3u8[bucket.Id] = bucket.Channels
+					m3u8 = append(m3u8, bucket)
 				case "enigma2":
-					enigma2[bucket.Id] = bucket.Channels
+					enigma2 = append(enigma2, bucket)
 				default:
 					log.Printf("format '%s' not supported", format)
 				}

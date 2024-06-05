@@ -26,11 +26,15 @@ streams:
 
 packages:
 - id: package1
+  name: Package 1
   formats:
   - m3u8
   - enigma2
-  # select channels by labels
+  # select specific channels (in given order)
   channels:
+  - jednotka
+  # select channels by labels (groups in given order, other labels are ignored)
+  channel_labels:
   - News
   # select streams by labels
   streams:

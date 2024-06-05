@@ -8,22 +8,22 @@ import (
 	"path/filepath"
 )
 
-func CreateEnigma2ByBuckets(buckets map[string][]BucketChannel, outPath string) error {
+func CreateEnigma2ByBuckets(buckets []Bucket, outPath string) error {
 	// if having multiple buckets, we need to use different namespace
 	var namespace = 1000
 
 	// create enigma2 files
-	for bucket, channles := range buckets {
+	for _, data := range buckets {
 		// create file name
-		tvFileName := fmt.Sprintf("%s.tv", bucket)
-		channelsFileName := fmt.Sprintf("%s.channels.xml", bucket)
+		tvFileName := fmt.Sprintf("%s.tv", data.Id)
+		channelsFileName := fmt.Sprintf("%s.channels.xml", data.Id)
 
 		// create file path
 		tvFilePath := filepath.Join(outPath, tvFileName)
 		channelsFilePath := filepath.Join(outPath, channelsFileName)
 
 		// create enigma2 struct
-		tv, channels := ChannelsToEnigma2(bucket, namespace, channles)
+		tv, channels := ChannelsToEnigma2(data.Name, namespace, data.Channels)
 
 		// write enigma2 file
 		if err := os.WriteFile(tvFilePath, []byte(tv), 0644); err != nil {
@@ -49,15 +49,10 @@ func ChannelsToEnigma2(bucketName string, namespace int, channel []BucketChannel
 	channelsBuffer.WriteString("<channels>\n")
 
 	for i, channel := range channel {
-		if len(channel.Streams) == 0 {
-			continue
-		}
-		stream := channel.Streams[0] // we expect only one stream per channel
-
 		id := i
 		servicePrefix := fmt.Sprintf("4097:0:1:%d:%d:0:0:0:0:0", id, namespace)
 
-		tvBuffer.WriteString(fmt.Sprintf("#SERVICE %s:%s:%s\n", servicePrefix, url.QueryEscape(stream.URL), channel.Name))
+		tvBuffer.WriteString(fmt.Sprintf("#SERVICE %s:%s:%s\n", servicePrefix, url.QueryEscape(channel.Stream.URL), channel.Name))
 		tvBuffer.WriteString(fmt.Sprintf("#DESCRIPTION %s\n", channel.Name))
 
 		if len(channel.Epgs) > 0 {
