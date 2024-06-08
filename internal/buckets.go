@@ -89,6 +89,10 @@ func ConvertToBuckets(config Config) (buckets []Bucket) {
 				// skip channels without any streams
 				continue
 			}
+			if len(pkg.ExcludedChannelLabels) > 0 && ArraysIntersect(pkg.ExcludedChannelLabels, channel.Labels) {
+				// skip channels with excluded labels
+				continue
+			}
 
 			var selectedStream Stream
 			hasStream := false
@@ -107,7 +111,7 @@ func ConvertToBuckets(config Config) (buckets []Bucket) {
 
 					// replace the URL with the provider's base path
 					stream.URL = basePath + stream.URL
-					if stream.Catchup != nil {
+					if stream.Catchup != nil && stream.Catchup.Mode == "default" {
 						// deep copy to avoid modifying the original
 						catchup := *stream.Catchup
 						catchup.Source = basePath + catchup.Source

@@ -33,9 +33,12 @@ packages:
   # select specific channels (in given order)
   channels:
   - jednotka
-  # select channels by labels (groups in given order, other labels are ignored)
+  # or select channels by labels (groups in given order, other labels are ignored)
   channel_labels:
   - News
+  # exclude channels by labels
+  excluded_channel_labels:
+  - XXX
   # select streams by labels
   streams:
   - h264

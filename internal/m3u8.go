@@ -41,7 +41,7 @@ func ChannelsToM3U8(xmlTvUrl string, channel []BucketChannel) string {
 	}
 
 	for i, ch := range channel {
-		buffer.WriteString(fmt.Sprintf("#EXTINF:-1 tvg-chno=\"%d\"", i))
+		buffer.WriteString(fmt.Sprintf("#EXTINF:-1 tvg-chno=\"%d\"", i+1))
 
 		if ch.Logo != "" {
 			buffer.WriteString(fmt.Sprintf(" tvg-logo=\"%s\"", ch.Logo))

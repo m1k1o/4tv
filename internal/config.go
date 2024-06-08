@@ -51,12 +51,13 @@ type Package struct {
 	Name    string   `yaml:"name"`
 	Formats []string `yaml:"formats"`
 	// labels
-	Channels      []string          `yaml:"channels,omitempty"`
-	ChannelLabels []string          `yaml:"channel_labels,omitempty"`
-	Streams       []string          `yaml:"streams,omitempty"`
-	Epg           []string          `yaml:"epg,omitempty"`
-	Logos         string            `yaml:"logos,omitempty"`
-	Providers     map[string]string `yaml:"providers"` // ID -> URL
+	Channels              []string          `yaml:"channels,omitempty"`
+	ChannelLabels         []string          `yaml:"channel_labels,omitempty"`
+	ExcludedChannelLabels []string          `yaml:"excluded_channel_labels,omitempty"`
+	Streams               []string          `yaml:"streams,omitempty"`
+	Epg                   []string          `yaml:"epg,omitempty"`
+	Logos                 string            `yaml:"logos,omitempty"`
+	Providers             map[string]string `yaml:"providers"` // ID -> URL
 }
 
 func (c *Config) Load(file string) error {
