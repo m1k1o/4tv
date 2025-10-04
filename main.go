@@ -205,6 +205,11 @@ var logosCmd = &cobra.Command{
 				continue
 			}
 
+			if logo == "" {
+				log.Printf("no logo for channel: %s", channel)
+				continue
+			}
+
 			// check if its png/jpg
 			ext := filepath.Ext(logo)
 			ext = fmt.Sprintf(".%s", ext)
