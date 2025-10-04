@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func CreateEnigma2ByBuckets(buckets []Bucket, outPath string) error {
@@ -51,12 +52,13 @@ func ChannelsToEnigma2(bucketName string, namespace int, channel []BucketChannel
 	for i, channel := range channel {
 		id := i
 		servicePrefix := fmt.Sprintf("4097:0:1:%d:%d:0:0:0:0:0", id, namespace)
+		name := strings.ReplaceAll(channel.Name, ":", "")
 
-		tvBuffer.WriteString(fmt.Sprintf("#SERVICE %s:%s:%s\n", servicePrefix, url.QueryEscape(channel.Stream.URL), channel.Name))
-		tvBuffer.WriteString(fmt.Sprintf("#DESCRIPTION %s\n", channel.Name))
+		tvBuffer.WriteString(fmt.Sprintf("#SERVICE %s:%s:%s\n", servicePrefix, url.QueryEscape(channel.Stream.URL), name))
+		tvBuffer.WriteString(fmt.Sprintf("#DESCRIPTION %s\n", name))
 
 		if len(channel.Epgs) > 0 {
-			channelsBuffer.WriteString(fmt.Sprintf("<channel id=\"%s\">%s:http%%3A//example.com</channel> <!-- %s -->\n", channel.Id, servicePrefix, channel.Name))
+			channelsBuffer.WriteString(fmt.Sprintf("<channel id=\"%s\">%s:http%%3A//example.com</channel> <!-- %s -->\n", channel.Id, servicePrefix, name))
 		}
 	}
 
