@@ -20,7 +20,7 @@ type Config struct {
 
 type EpgSource struct {
 	Id          string            `yaml:"id"`
-	URL         string            `yaml:"url"`
+	URLs        []string          `yaml:"urls"`
 	Labels      []string          `yaml:"labels,omitempty"`
 	ChannelsMap map[string]string `yaml:"channels_map,omitempty"`
 }

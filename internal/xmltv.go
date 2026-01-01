@@ -78,20 +78,23 @@ func FilterXmlTvByChannels(input xmltv, channels map[string]string /* channel_id
 // join xmltv files without duplicates
 func JoinXmlTvs(inputs ...xmltv) (output xmltv, err error) {
 	// check if already exists in output
-	inputsMap := make(map[string]int)
-	for i, input := range inputs {
+	channelsMap := make(map[string]struct{})
+	for _, input := range inputs {
 		for _, channel := range input.ChannelList {
-			if _, ok := inputsMap[channel.Id]; !ok {
-				inputsMap[channel.Id] = i
+			if _, ok := channelsMap[channel.Id]; !ok {
+				channelsMap[channel.Id] = struct{}{}
 				output.ChannelList = append(output.ChannelList, channel)
 			}
 		}
 	}
 
-	// join programmes based on inputsMap id
-	for i, input := range inputs {
+	// check if already exists in output
+	programmesMap := make(map[string]struct{})
+	for _, input := range inputs {
 		for _, programme := range input.ProgrammeList {
-			if j, ok := inputsMap[programme.Channel]; ok && j == i {
+			id := fmt.Sprintf("%s_%s_%s", programme.Channel, programme.Start, programme.Stop)
+			if _, ok := programmesMap[id]; !ok {
+				programmesMap[id] = struct{}{}
 				output.ProgrammeList = append(output.ProgrammeList, programme)
 			}
 		}
@@ -103,24 +106,26 @@ func JoinXmlTvs(inputs ...xmltv) (output xmltv, err error) {
 func DownloadXmlTvByEpgSoruce(sources []EpgSource) (map[string][]*os.File, error) {
 	epgs := make(map[string][]*os.File)
 	for _, source := range sources {
-		file, err := os.CreateTemp("", fmt.Sprintf("xmltv-%s-*.xml", source.Id))
-		if err != nil {
-			return nil, err
-		}
-
-		log.Printf("Downloading %s from %s\n", filepath.Base(file.Name()), source.URL)
-
-		epgs[source.Id] = append(epgs[source.Id], file)
-
-		// download file
-		if err := DownloadFile(file, source.URL); err != nil {
-			for _, f := range epgs {
-				for _, ff := range f {
-					ff.Close()
-					os.Remove(ff.Name())
-				}
+		for _, url := range source.URLs {
+			file, err := os.CreateTemp("", fmt.Sprintf("xmltv-%s-*.xml", source.Id))
+			if err != nil {
+				return nil, err
 			}
-			return nil, err
+
+			log.Printf("Downloading %s from %s\n", filepath.Base(file.Name()), url)
+
+			epgs[source.Id] = append(epgs[source.Id], file)
+
+			// download file
+			if err := DownloadFile(file, url); err != nil {
+				for _, f := range epgs {
+					for _, ff := range f {
+						ff.Close()
+						os.Remove(ff.Name())
+					}
+				}
+				return nil, err
+			}
 		}
 	}
 
